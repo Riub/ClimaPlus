@@ -1,6 +1,6 @@
-# 🌤️ ClimaPlus - Aplicación del Clima con Docker
+# 🌤️ ClimaPlus - Aplicación del Clima
 
-Aplicación full-stack para consultar el clima en tiempo real.  
+Aplicación para consultar el clima en tiempo real.  
 **Frontend**: React | **Backend**: Node.js | **Despliegue**: Docker Compose.
 
 ![Docker](https://img.shields.io/badge/Docker-✓-blue?logo=docker)
