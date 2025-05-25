@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  frontend:
+    build: ./climaplus-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://backend:3001
+    depends_on:
+      - backend
+    networks:
+      - climanet
+
+  backend:
+    build: ./backend
+    ports:
+      - "3001:3001"
+    environment:
+      - OPENWEATHER_API_KEY=54a07a88081d9660c4449034b1d9571e
+    networks:
+      - climanet
+
+networks:
+  climanet:
