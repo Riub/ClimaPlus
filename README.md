@@ -27,4 +27,4 @@ docker compose up --build
 
 Frontend: http://localhost:3000
 
-Backend: http://localhost:3001/api/weather?city=Madrid (Ejemplo de consulta//Cambiar el nombre de la ciudad)
+Backend: http://localhost:3001/api/weather?city=Bogota (Ejemplo de consulta//Cambiar el nombre de la ciudad)
