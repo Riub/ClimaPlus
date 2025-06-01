@@ -1,7 +1,7 @@
 pipeline {
     agent any
     stages {
-        stage('Build & Deploy prueba') {
+        stage('Build & Deploy') {
             steps {
                 sh 'docker-compose down || true'  
                 sh 'docker-compose build --no-cache'
