@@ -1,15 +1,11 @@
 pipeline {
     agent any
     stages {
-        stage('Clonar y Crear') {
+        stage('Build & Deploy') {
             steps {
-                sh 'docker compose down || true' 
-                sh 'docker compose build --no-cache'
-            }
-        }
-        stage('Desplegar') {
-            steps {
-                sh 'docker compose up -d'
+                sh 'docker-compose down || true'  
+                sh 'docker-compose build --no-cache'
+                sh 'docker-compose up -d'
             }
         }
     }
