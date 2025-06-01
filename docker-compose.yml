@@ -1,6 +1,34 @@
 version: '3.8'
 
 services:
+  # Base de datos PostgreSQL
+  db:
+    image: postgres:13
+    environment:
+      - POSTGRES_USER=climaplus
+      - POSTGRES_PASSWORD=climaplus123
+      - POSTGRES_DB=climaplus
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - climanet
+
+  # Backend (Node.js + Express)
+  backend:
+    build: ./backend
+    ports:
+      - "3001:3001"
+    environment:
+      - OPENWEATHER_API_KEY=54a07a88081d9660c4449034b1d9571e
+      - DATABASE_URL=postgres://climaplus:climaplus123@db:5432/climaplus
+    depends_on:
+      - db
+    networks:
+      - climanet
+
+  # Frontend (React)
   frontend:
     build: ./climaplus-frontend
     ports:
@@ -12,14 +40,9 @@ services:
     networks:
       - climanet
 
-  backend:
-    build: ./backend
-    ports:
-      - "3001:3001"
-    environment:
-      - OPENWEATHER_API_KEY=54a07a88081d9660c4449034b1d9571e
-    networks:
-      - climanet
-
+# Red y volúmenes
 networks:
   climanet:
+
+volumes:
+  postgres_data:
