@@ -14,12 +14,6 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - climanet
-    healthcheck: 
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
-      interval: 5s 
-      timeout: 5s 
-      retries: 5  
-
 
   # Backend (Node.js + Express)
   backend:
@@ -30,8 +24,7 @@ services:
       - OPENWEATHER_API_KEY=54a07a88081d9660c4449034b1d9571e
       - DATABASE_URL=postgres://climaplus:climaplus123@db:5432/climaplus
     depends_on:
-      db:
-        condition: service_healthy 
+      - db
     networks:
       - climanet
 
