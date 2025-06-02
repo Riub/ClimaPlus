@@ -37,10 +37,9 @@ async function initDB() {
 
   } catch (err) {
     console.error('❌ Error al crear tablas:', err.message);
-    // Puedes loguear el objeto de error completo para más detalles si es necesario
-    // console.error(err);
+
   } finally {
-    if (client) { // Asegúrate de que el cliente exista antes de intentar cerrarlo
+    if (client) { 
       await client.end();
       console.log('🔌 Conexión a la base de datos cerrada.');
     }
