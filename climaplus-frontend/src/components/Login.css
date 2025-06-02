@@ -103,7 +103,7 @@ button:disabled {
   40%, 80% { transform: translateX(5px); }
 }
 
-/* Efecto de carga (opcional) */
+/* Efecto de carga */
 @keyframes pulse {
   0% { opacity: 0.6; }
   50% { opacity: 1; }
