@@ -4,4 +4,4 @@ COPY package*.json ./
 RUN npm install
 COPY . .
 EXPOSE 3001
-CMD ["sh", "-c", "node backend/bd/init.js && node index.js"]
+CMD ["sh", "-c", "node db/init.js && node index.js"]
