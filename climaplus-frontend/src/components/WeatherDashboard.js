@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import './WeatherDashboard.css'; // Asegúrate de crear este archivo CSS
+import './WeatherDashboard.css'; 
 
 const WeatherDashboard = ({ user }) => {
   const [city, setCity] = useState('');
