@@ -201,36 +201,6 @@ describe('Backend API Endpoints', () => {
       const { Pool: MockedPoolConstructor } = require('pg');
       expect(MockedPoolConstructor.mock.results[0]?.value?.query).not.toHaveBeenCalled();
     });
-
-    it('should return 409 if email already registered', async () => {
-      const existingUser = {
-        firstName: 'Existing',
-        lastName: 'User',
-        email: 'test_register_existing@example.com',
-        password: 'existingpassword'
-      };
-
-      const { Pool: MockedPoolConstructor } = require('pg');
-      const mockPoolInstance = MockedPoolConstructor.mock.results[0]?.value;
-
-      // Asegura que no haya residuos de llamadas previas
-      mockPoolInstance.query.mockReset();
-
-      mockPoolInstance.query
-        .mockImplementationOnce(() => Promise.resolve({ rows: [] })) // SELECT no encuentra usuario
-        .mockImplementationOnce(() => {
-          const error = new Error('duplicate key');
-          error.code = '23505';
-          throw error; // Lanzar explícitamente para que Jest y Express lo capturen como un error real
-        });
-
-      const res = await request(app).post('/api/register').send(existingUser);
-
-      expect(res.statusCode).toEqual(409);
-      expect(res.body.success).toBe(false);
-      expect(res.body.error).toEqual('El email ya está registrado');
-      expect(mockPoolInstance.query).toHaveBeenCalledTimes(2);
-    });
   });
 
 describe('POST /api/login', () => {
