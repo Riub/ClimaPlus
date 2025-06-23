@@ -210,42 +210,48 @@ describe('Backend API Endpoints', () => {
         password: 'existingpassword'
       };
 
-        const { Pool: MockedPoolConstructor } = require('pg');
-        const mockPoolInstance = MockedPoolConstructor.mock.results[0]?.value;
+      const { Pool: MockedPoolConstructor } = require('pg');
+      const mockPoolInstance = MockedPoolConstructor.mock.results[0]?.value;
 
-        // Simula el SELECT previo para verificar si ya existe el usuario
-        mockPoolInstance.query
-          // PRIMERA llamada: no se encuentra usuario con ese email
-          .mockResolvedValueOnce({ rows: [] })
-          // SEGUNDA llamada: falla el INSERT por clave duplicada
-          .mockRejectedValueOnce(Object.assign(new Error('duplicate key'), { code: '23505' }));
+      // Asegura que el mock esté limpio
+      mockPoolInstance.query.mockReset();
 
-        const res = await request(app).post('/api/register').send(existingUser);
+      mockPoolInstance.query
+        // Simula que el correo aún no existe
+        .mockResolvedValueOnce({ rows: [] })
+        // Luego falla el INSERT por clave duplicada
+        .mockRejectedValueOnce(Object.assign(new Error('duplicate key'), { code: '23505' }));
 
-        // Asegura que el backend maneja correctamente el conflicto
-        expect(res.statusCode).toEqual(409);
-        expect(res.body.success).toBe(false);
-        expect(res.body.error).toEqual('El email ya está registrado');
+      const res = await request(app).post('/api/register').send(existingUser);
 
-        // Verifica que se hicieron dos llamadas a pool.query
-        expect(mockPoolInstance.query).toHaveBeenCalledTimes(2);
-        expect(mockPoolInstance.query.mock.calls[1][0]).toMatch(/INSERT INTO users/i);
-      });
+      expect(res.statusCode).toEqual(409);
+      expect(res.body.success).toBe(false);
+      expect(res.body.error).toEqual('El email ya está registrado');
+      expect(mockPoolInstance.query).toHaveBeenCalledTimes(2);
+      expect(mockPoolInstance.query.mock.calls[1][0]).toMatch(/INSERT INTO users/i);
+    });
   });
 
 describe('POST /api/login', () => {
   const { Pool: MockedPoolConstructor } = require('pg');
   const mockPoolInstance = MockedPoolConstructor.mock.results[0]?.value;
 
-  it('should login a valid user successfully', async () => {
-    // Mockear la respuesta de la DB para la consulta SELECT del usuario
+    it('should login a valid user successfully', async () => {
+    const { Pool: MockedPoolConstructor } = require('pg');
+    const mockPoolInstance = MockedPoolConstructor.mock.results[0]?.value;
+
+    // Asegura que el mock esté limpio
+    mockPoolInstance.query.mockReset();
+
+    const hashed = await bcrypt.hash(testUser.password, 10);
+
     mockPoolInstance.query.mockResolvedValueOnce({
       rows: [{
-        id: testUserId, // Asegúrate de que testUserId esté disponible
+        id: testUserId,
         first_name: testUser.firstName,
         last_name: testUser.lastName,
         email: testUser.email,
-        password_hash: hashedPassword // ¡Usar el hash generado en beforeAll!
+        password_hash: hashed
       }]
     });
 
@@ -263,6 +269,7 @@ describe('POST /api/login', () => {
       [testUser.email]
     );
   });
+
 
   it('should return 401 for invalid credentials (wrong password)', async () => {
     mockPoolInstance.query.mockResolvedValueOnce({
