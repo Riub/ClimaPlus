@@ -71,15 +71,17 @@ beforeAll(async () => {
 // --- Después de todas las pruebas ---
 afterAll(async () => {
   // Limpiar tablas nuevamente o simplemente cerrar la conexión
-  // Dependiendo de tu estrategia de limpieza post-test
   try {
-    // Si quieres borrar todo después, puedes volver a DROP TABLE
-    await pool.query('DROP TABLE IF EXISTS favorites;');
-    await pool.query('DROP TABLE IF EXISTS users CASCADE;');
-    await pool.end(); // Cerrar la conexión al pool de DB
-    console.log('Conexión a la base de datos de prueba cerrada y tablas eliminadas.');
+    // Asegúrate de que el pool esté definido y conectado antes de intentar cerrarlo
+    if (pool) {
+      await pool.query('DROP TABLE IF EXISTS favorites;'); // Limpieza de tablas
+      await pool.query('DROP TABLE IF EXISTS users CASCADE;'); // Limpieza de tablas
+      await pool.end(); // ¡Cerrar la conexión al pool de DB!
+      console.log('Conexión a la base de datos de prueba cerrada y tablas eliminadas.');
+    }
   } catch (error) {
-    console.error('Error al limpiar la base de datos de prueba:', error);
+    console.error('Error al limpiar la base de datos de prueba en afterAll:', error);
+    // No uses process.exit(1) aquí, ya que podría abortar el pipeline cuando los tests pasaron
   }
 });
 
