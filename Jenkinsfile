@@ -5,15 +5,14 @@ pipeline {
         stage('Build & Test Frontend/Backend') {
             steps {
                 script {
-                    echo 'Deteniendo servicios Docker previos para la fase de test (si existen)...'
-    
-                    sh 'docker-compose down db || true' // Solo baja el servicio 'db'
+                    echo 'Deteniendo y eliminando todos los servicios Docker anteriores (y volúmenes si es necesario para un inicio limpio de DB para tests)...'
+                    // Utiliza `docker-compose down -v` aquí para asegurar una limpieza completa
+                    sh 'docker-compose down -v || true' // CAMBIO: down -v
 
                     echo 'Levantando solo la base de datos para tests...'
-                    sh 'docker-compose up -d db' // Levanta solo el servicio 'db'
+                    sh 'docker-compose up -d db'
 
                     echo 'Esperando a que la base de datos esté lista para tests...'
-
                     sh '''
                         docker-compose exec -T db sh -c "
                             until pg_isready -h localhost -p 5432 -U climaplus -d climaplus; do
@@ -23,12 +22,11 @@ pipeline {
                         "
                     '''
 
-
                     dir('backend') {
                         echo 'Instalando dependencias de backend...'
                         sh 'npm install'
                         echo 'Ejecutando pruebas de backend...'
-                        sh 'npm test'
+                        sh 'DATABASE_URL_TEST="postgres://climaplus:climaplus123@localhost:5432/climaplus" npm test'
                     }
                     dir('climaplus-frontend') {
                         echo 'Instalando dependencias de frontend...'
@@ -44,7 +42,8 @@ pipeline {
             steps {
                 script {
                     echo 'Deteniendo y eliminando servicios Docker anteriores (manteniendo volúmenes)...'
-                    sh 'docker-compose down || true'
+                    
+                    sh 'docker-compose down || true' 
 
                     echo 'Construyendo imágenes Docker...'
                     sh 'docker-compose build'
@@ -52,24 +51,19 @@ pipeline {
                     echo 'Levantando servicios Docker...'
                     sh 'docker-compose up -d'
 
-                    echo 'Esperando a que la base de datos esté lista para conexiones...'
-                    // --- ¡CORRECCIÓN AQUÍ! ---
-                    // Añadir -T a docker-compose exec
+                    echo 'Esperando a que la base de datos esté lista para conexiones de la aplicación principal...'
                     sh '''
                         docker-compose exec -T db sh -c "
                             until pg_isready -h localhost -p 5432 -U climaplus -d climaplus; do
-                                echo 'Esperando por db...'
+                                echo 'Esperando por db para aplicación principal...'
                                 sleep 2
                             done
                         "
                     '''
-
                     echo 'Ejecutando script de inicialización de la base de datos (db/init.js)...'
-                    // También deberías añadir -T aquí por si acaso, aunque a veces Node no lo necesita tanto.
                     sh 'docker-compose exec -T backend node db/init.js'
 
                     echo 'Confirmando que las tablas se crearon en la BD...'
-                    // También añadir -T aquí, ya que psql en modo -c no es interactivo.
                     sh 'docker-compose exec -T db psql -U climaplus -d climaplus -c "\\dt"'
 
                     echo 'Servicios Docker desplegados y DB inicializada.'
@@ -97,7 +91,8 @@ pipeline {
         }
         always {
             echo 'Realizando limpieza final...'
-            sh 'docker-compose down'
+            // Limpia todo lo que se levantó en cualquier etapa del pipeline
+            sh 'docker-compose down' 
         }
     }
 }
