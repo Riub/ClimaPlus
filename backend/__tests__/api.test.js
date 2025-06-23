@@ -7,7 +7,7 @@ require('dotenv').config({ path: './.env.test' });
 // Configuración de la base de datos de prueba
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL_TEST || 'postgres://climaplus:climaplus123@localhost:5432/climaplus_test'
+  connectionString: process.env.DATABASE_URL_TEST || 'postgres://climaplus:climaplus123@localhost:5432/climaplus'
 });
 
 // Mockear axios para evitar llamadas reales a la API de OpenWeatherMap
