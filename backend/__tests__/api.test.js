@@ -209,25 +209,27 @@ describe('Backend API Endpoints', () => {
         password: 'existingpassword'
       };
 
-      const { Pool: MockedPoolConstructor } = require('pg');
-      const mockPoolInstance = MockedPoolConstructor.mock.results[0]?.value;
+        const { Pool: MockedPoolConstructor } = require('pg');
+        const mockPoolInstance = MockedPoolConstructor.mock.results[0]?.value;
 
-      // PRIMERA LLAMADA: Simular que la consulta SELECT no encuentra el usuario (para que la app intente INSERTAR)
-      mockPoolInstance.query.mockResolvedValueOnce({ rows: [] });
+        // Simula el SELECT previo para verificar si ya existe el usuario
+        mockPoolInstance.query
+          // PRIMERA llamada: no se encuentra usuario con ese email
+          .mockResolvedValueOnce({ rows: [] })
+          // SEGUNDA llamada: falla el INSERT por clave duplicada
+          .mockRejectedValueOnce(Object.assign(new Error('duplicate key'), { code: '23505' }));
 
-      // SEGUNDA LLAMADA: Simular que el INSERT falla con error de unicidad (23505)
-      const uniqueConstraintError = new Error('duplicate key value violates unique constraint "users_email_key"');
-      uniqueConstraintError.code = '23505';
-      mockPoolInstance.query.mockRejectedValueOnce(uniqueConstraintError);
+        const res = await request(app).post('/api/register').send(existingUser);
 
-      const res = await request(app).post('/api/register').send(existingUser);
-      expect(res.statusCode).toEqual(409);
-      expect(res.body.success).toBe(false);
-      expect(res.body.error).toEqual('El email ya está registrado');
+        // Asegura que el backend maneja correctamente el conflicto
+        expect(res.statusCode).toEqual(409);
+        expect(res.body.success).toBe(false);
+        expect(res.body.error).toEqual('El email ya está registrado');
 
-      // Verificamos que se llamó al pool.query dos veces (una para SELECT, otra para INSERT)
-      expect(mockPoolInstance.query).toHaveBeenCalledTimes(2);
-    });
+        // Verifica que se hicieron dos llamadas a pool.query
+        expect(mockPoolInstance.query).toHaveBeenCalledTimes(2);
+        expect(mockPoolInstance.query.mock.calls[1][0]).toMatch(/INSERT INTO users/i);
+      });
   });
 
 describe('POST /api/login', () => {
