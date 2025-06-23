@@ -6,7 +6,6 @@ pipeline {
             steps {
                 script {
                     echo 'Deteniendo y eliminando todos los servicios Docker anteriores (y volúmenes si es necesario para un inicio limpio de DB para tests)...'
-                    // Utiliza `docker-compose down -v` aquí para asegurar una limpieza completa
                     sh 'docker-compose down || true' 
 
                     echo 'Levantando solo la base de datos para tests...'
@@ -69,25 +68,6 @@ pipeline {
                     echo 'Servicios Docker desplegados y DB inicializada.'
                 }
             }
-        }
-    }
-
-    post {
-        failure {
-            emailext (
-                subject: "🚨 Pipeline FALLIDO: ${env.JOB_NAME} - Build #${env.BUILD_NUMBER}",
-                body: "El pipeline '${env.JOB_NAME}' ha fallado en el build #${env.BUILD_NUMBER}.\n" +
-                      "Revisa los detalles aquí: ${env.BUILD_URL}console",
-                to: "dracon_019@hotmail.es"
-            )
-        }
-        success {
-            emailext (
-                subject: "✅ Pipeline EXITOSO: ${env.JOB_NAME}",
-                body: "El pipeline '${env.JOB_NAME}' ha finalizado con éxito en el build #${env.BUILD_NUMBER}.\n" +
-                      "Detalles: ${env.BUILD_URL}console",
-                to: "dracon_019@hotmail.es"
-            )
         }
     }
 }
