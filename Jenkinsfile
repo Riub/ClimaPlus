@@ -1,52 +1,33 @@
 pipeline {
     agent any
-    options {
-        timeout(time: 30, unit: 'MINUTES')
-    }
     stages {
-        stage('Preparar Entorno y Dependencias') {
+        stage('Build & Test') {
             steps {
                 dir('backend') {
                     sh 'npm install'
+                    sh 'npm test'  // Ejecuta pruebas de backend (Mocha/Jest)
                 }
                 dir('climaplus-frontend') {
                     sh 'npm install'
+                    sh 'npm test'  // Ejecuta pruebas de frontend (Jest)
                 }
             }
         }
-        stage('Ejecutar Pruebas de Backend') {
-            steps {
-                dir('backend') {
-                    sh 'npm test'
-                }
-            }
-        }
-        stage('Ejecutar Pruebas de Frontend') {
-            steps {
-                dir('climaplus-frontend') {
-                    sh 'npm test -- --watchAll=false'
-                }
-            }
-        }
-        stage('Despliegue Docker') {
+        stage('Deploy') {
             steps {
                 sh 'docker-compose down || true'
-                sh 'docker-compose build'                
+                sh 'docker-compose build --no-cache'
                 sh 'docker-compose up -d'
             }
         }
     }
-
     post {
-        
-        always {
-            echo 'Pipeline de CI/CD completado.'
-        }
-        success {
-            echo '¡Despliegue exitoso!'           
-        }
         failure {
-            echo '¡El pipeline falló! Revisa los logs.'           
+            emailext (
+                subject: "🚨 Pipeline FALLIDO: ${env.JOB_NAME}",
+                body: "Detalles: ${env.BUILD_URL}console",
+                to: "tu-email@example.com"
+            )
         }
     }
 }
