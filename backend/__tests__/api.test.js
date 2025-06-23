@@ -26,7 +26,7 @@ let hashedPassword;
 beforeAll(async () => {
   try {
     global.client = await pool.connect();
-    await global.client.query('BEGIN'); // Inicia transacción
+    await global.client.query('BEGIN'); 
 
     // Crear tablas solo si no existen
     await global.client.query(`
@@ -120,7 +120,7 @@ describe('Backend API Endpoints', () => {
   describe('POST /api/register', () => {
     
     beforeEach(async () => {
-      await pool.query('DELETE FROM users WHERE email LIKE \'test_register_%\'');
+      await global.client.query('DELETE FROM users WHERE email LIKE \'test_register_%\'');
     });
 
     it('should register a new user successfully', async () => {
