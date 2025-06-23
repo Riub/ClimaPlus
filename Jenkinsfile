@@ -26,14 +26,16 @@ pipeline {
                     sh 'docker-compose down || true'
 
                     echo 'Construyendo imágenes Docker...'
-                    sh 'docker-compose build' 
+                    sh 'docker-compose build'
 
                     echo 'Levantando servicios Docker...'
                     sh 'docker-compose up -d'
 
                     echo 'Esperando a que la base de datos esté lista para conexiones...'
+                    // --- ¡CORRECCIÓN AQUÍ! ---
+                    // Añadir -T a docker-compose exec
                     sh '''
-                        docker-compose exec db sh -c "
+                        docker-compose exec -T db sh -c "
                             until pg_isready -h localhost -p 5432 -U climaplus -d climaplus; do
                                 echo 'Esperando por db...'
                                 sleep 2
@@ -42,10 +44,12 @@ pipeline {
                     '''
 
                     echo 'Ejecutando script de inicialización de la base de datos (db/init.js)...'
-                    sh 'docker-compose exec backend node db/init.js'
+                    // También deberías añadir -T aquí por si acaso, aunque a veces Node no lo necesita tanto.
+                    sh 'docker-compose exec -T backend node db/init.js'
 
                     echo 'Confirmando que las tablas se crearon en la BD...'
-                    sh 'docker-compose exec db psql -U climaplus -d climaplus -c "\\dt"'
+                    // También añadir -T aquí, ya que psql en modo -c no es interactivo.
+                    sh 'docker-compose exec -T db psql -U climaplus -d climaplus -c "\\dt"'
 
                     echo 'Servicios Docker desplegados y DB inicializada.'
                 }
