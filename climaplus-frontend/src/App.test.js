@@ -12,7 +12,6 @@ test('renders welcome message in App component', () => {
 // Puedes añadir una prueba para un componente específico, por ejemplo, Login
 // `climaplus-frontend/src/components/Login.test.js`
 
-import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import Login from './Login';
 
