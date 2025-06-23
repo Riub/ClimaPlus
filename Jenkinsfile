@@ -26,7 +26,7 @@ pipeline {
                         echo 'Instalando dependencias de backend...'
                         sh 'npm install'
                         echo 'Ejecutando pruebas de backend...'
-                        sh 'DATABASE_URL_TEST="postgres://climaplus:climaplus123@localhost:5432/climaplus" npm test'
+                        sh 'DATABASE_URL_TEST="postgres://climaplus:climaplus123@localhost:5432/climaplus" DATABASE_URL="postgres://climaplus:climaplus123@localhost:5432/climaplus" npm test'
                     }
                     dir('climaplus-frontend') {
                         echo 'Instalando dependencias de frontend...'
