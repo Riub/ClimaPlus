@@ -24,25 +24,25 @@ pipeline {
                 script {
                     echo 'Deteniendo y eliminando servicios Docker anteriores (incluyendo volúmenes si es un inicio limpio de DB)...'
                     // Usar 'docker compose down -v' si se requiere  que la base de datos se borre y se reinicie en cada build.
-                    sh 'docker compose down || true' 
+                    sh 'docker-compose down || true' 
 
                     echo 'Construyendo imágenes Docker...'
-                    sh 'docker compose build --no-cache'
+                    sh 'docker-compose build'
 
                     echo 'Levantando servicios Docker...'
-                    sh 'docker compose up -d'
+                    sh 'docker-compose up -d'
 
                     echo 'Esperando a que la base de datos esté lista para conexiones...'
 
-                    sh 'docker compose exec db sh -c "until pg_isready -h localhost -p 5432 -U climaplus -d climaplus; do echo \\"Esperando por db...\"; sleep 2; done"'
+                    sh 'docker-compose exec db sh -c "until pg_isready -h localhost -p 5432 -U climaplus -d climaplus; do echo \\"Esperando por db...\"; sleep 2; done"'
 
                     echo 'Ejecutando script de inicialización de la base de datos (db/init.js)...'
                     // Asegúrate de que tu backend tenga el código en /app/db/init.js
-                    sh 'docker compose exec backend node db/init.js'
+                    sh 'docker-compose exec backend node db/init.js'
 
                     echo 'Confirmando que las tablas se crearon en la BD...'
                     // Usamos 'climaplus' como usuario y DB, según tu docker-compose.yml
-                    sh 'docker compose exec db psql -U climaplus -d climaplus -c "\\dt"'
+                    sh 'docker-compose exec db psql -U climaplus -d climaplus -c "\\dt"'
 
                     echo 'Servicios Docker desplegados y DB inicializada.'
                 }
@@ -69,7 +69,7 @@ pipeline {
         }
         always {
             echo 'Realizando limpieza final...'
-            sh 'docker compose down' 
+            sh 'docker-compose down' 
         }
     }
 }
