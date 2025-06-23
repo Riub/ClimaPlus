@@ -35,8 +35,6 @@ let hashedPassword;
 beforeAll(async () => {
   console.log('Entorno de pruebas: Iniciando preparación de base de datos REAL.');
   try {
-
-    await realTestPool.connect();
     await realTestPool.query('DROP TABLE IF EXISTS favorites;');
     await realTestPool.query('DROP TABLE IF EXISTS users CASCADE;'); 
     await realTestPool.query(`
