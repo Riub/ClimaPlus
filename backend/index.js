@@ -80,6 +80,7 @@ app.post('/api/register', async (req, res) => {
 
   } catch (err) {
     // 7. Manejo específico de errores
+    console.error('Código de error recibido:', err.code);
     if (err.code === '23505') {
       res.status(409).json({
         success: false,
