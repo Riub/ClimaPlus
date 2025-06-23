@@ -23,6 +23,7 @@ services:
     environment:
       - OPENWEATHER_API_KEY=54a07a88081d9660c4449034b1d9571e
       - DATABASE_URL=postgres://climaplus:climaplus123@db:5432/climaplus
+      - DATABASE_URL_TEST=postgres://climaplus:climaplus123@localhost:5432/climaplus
     depends_on:
       - db
     networks:
