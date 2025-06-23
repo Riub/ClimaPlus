@@ -125,5 +125,84 @@ if (require.main === module) {
   app.listen(PORT, () => console.log(`Backend running on port ${PORT}`));
 }
 
+// GET Favoritos
+app.get('/api/favorites', async (req, res) => {
+  const { userId } = req.query;
+
+  if (!userId) {
+    return res.status(400).json({ error: 'User ID es requerido' });
+  }
+
+  try {
+    const result = await pool.query(
+      `SELECT city FROM favorites WHERE user_id = $1 
+       ORDER BY id DESC`, // Ordenar por ID descendente (más recientes primero)
+      [userId]
+    );
+    res.json(result.rows.map(item => item.city));
+  } catch (err) {
+    console.error('Error en GET /api/favorites:', err);
+    res.status(500).json({ error: 'Error al obtener favoritos' });
+  }
+});
+
+// POST Favoritos
+app.post('/api/favorites', async (req, res) => {
+  const { userId, city } = req.body;
+
+  if (!userId || !city) {
+    return res.status(400).json({ error: 'User ID y ciudad son requeridos' });
+  }
+
+  try {
+    // Verificar si el usuario existe
+    const userExists = await pool.query('SELECT id FROM users WHERE id = $1', [userId]);
+    if (userExists.rows.length === 0) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
+    // Insertar con ON CONFLICT DO NOTHING (evita errores de duplicados)
+    await pool.query(
+      `INSERT INTO favorites (user_id, city) 
+       VALUES ($1, $2) 
+       ON CONFLICT (user_id, city) DO NOTHING`,
+      [userId, city]
+    );
+    
+    res.status(201).json({ message: 'Ciudad agregada a favoritos' });
+  } catch (err) {
+    console.error('Error en POST /api/favorites:', err);
+    res.status(500).json({ error: 'Error al guardar favorito' });
+  }
+});
+
+// DELETE Favoritos
+app.delete('/api/favorites', async (req, res) => {
+  const { userId, city } = req.body;
+
+  if (!userId || !city) {
+    return res.status(400).json({ error: 'User ID y ciudad son requeridos' });
+  }
+
+  try {
+    const result = await pool.query(
+      `DELETE FROM favorites 
+       WHERE user_id = $1 AND city = $2 
+       RETURNING *`,
+      [userId, city]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Favorito no encontrado' });
+    }
+
+    res.status(200).json({ message: 'Ciudad eliminada de favoritos' });
+  } catch (err) {
+    console.error('Error en DELETE /api/favorites:', err);
+    res.status(500).json({ error: 'Error al eliminar favorito' });
+  }
+});
+
+
 // Exporta la instancia de la aplicación Express
 module.exports = app;
