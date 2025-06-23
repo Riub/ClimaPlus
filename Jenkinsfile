@@ -89,10 +89,5 @@ pipeline {
                 to: "dracon_019@hotmail.es"
             )
         }
-        always {
-            echo 'Realizando limpieza final...'
-            // Limpia todo lo que se levantó en cualquier etapa del pipeline
-            sh 'docker-compose down' 
-        }
     }
 }
