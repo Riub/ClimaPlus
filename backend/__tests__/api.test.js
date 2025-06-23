@@ -1,39 +1,28 @@
 const request = require('supertest');
 const bcrypt = require('bcryptjs');
-const app = require('../index'); // Importa la aplicación Express
+
 require('dotenv').config({ path: './.env.test' });
 
-// ====================================================================
-// --- 1. MOCKING DEL MÓDULO 'pg' PARA LA APLICACIÓN (index.js) ---
-// Esto intercepta cualquier 'require('pg')' dentro de tu index.js.
-// Tu aplicación usará este pool mockeado para sus operaciones de DB.
 jest.mock('pg', () => {
-  // Creamos un mock para el Pool con métodos 'query', 'connect', 'end'
+
   const mockPoolInstance = {
     query: jest.fn(),
-    connect: jest.fn(() => Promise.resolve()), // Simula que la conexión siempre es exitosa
-    end: jest.fn(() => Promise.resolve()), // Simula que el cierre siempre es exitoso
+    connect: jest.fn(() => Promise.resolve()), 
+    end: jest.fn(() => Promise.resolve()), 
   };
-  // Devolvemos una función que simula el constructor Pool, y que al ser llamada
-  // devuelve nuestra instancia mockeada.
+ 
   return { Pool: jest.fn(() => mockPoolInstance) };
 });
 
-// Importa el axios mockeado (ya lo tienes, solo para claridad)
-const axios = require('axios'); // Ya está mockeado por jest.mock('axios');
+const app = require('../index');
+const axios = require('axios'); 
 
-// ====================================================================
-// --- 2. GESTIÓN DE BASES DE DATOS REALES PARA LAS PRUEBAS (POOL REAL) ---
-// Este es un pool REAL de pg.Pool, usado *solo por este archivo de test*
-// para configurar y limpiar la base de datos de prueba *real* en beforeAll.
-// Tu aplicación (index.js) NO usará este pool; usará el pool mockeado de arriba.
-const ActualPg = jest.requireActual('pg'); // Importa la versión REAL de 'pg'
+
+const ActualPg = jest.requireActual('pg'); 
 const realTestPool = new ActualPg.Pool({
   connectionString: process.env.DATABASE_URL_TEST || 'postgres://climaplus:climaplus123@localhost:5432/climaplus'
 });
 
-// ====================================================================
-// Variables para pruebas de usuario y credenciales
 let testUser = {
   firstName: 'Test',
   lastName: 'User',
@@ -41,23 +30,15 @@ let testUser = {
   password: 'password123'
 };
 let testUserId;
-let hashedPassword; // Se generará en beforeAll
+let hashedPassword; 
 
-// ====================================================================
-// --- HOOKS DE SETUP/TEARDOWN ---
-
-// --- Before All (antes de todas las pruebas) ---
 beforeAll(async () => {
   console.log('Entorno de pruebas: Iniciando preparación de base de datos REAL.');
   try {
-    // Conectar al pool REAL para manipular la base de datos de prueba
+
     await realTestPool.connect();
-
-    // Limpiar tablas existentes para asegurar un estado limpio
     await realTestPool.query('DROP TABLE IF EXISTS favorites;');
-    await realTestPool.query('DROP TABLE IF EXISTS users CASCADE;'); // CASCADE para eliminar dependencias
-
-    // Recrear las tablas necesarias para las pruebas
+    await realTestPool.query('DROP TABLE IF EXISTS users CASCADE;'); 
     await realTestPool.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
@@ -77,7 +58,6 @@ beforeAll(async () => {
     `);
     console.log('Base de datos de prueba REAL reiniciada y tablas creadas.');
 
-    // Insertar un usuario de prueba directamente en la DB REAL
     hashedPassword = await bcrypt.hash(testUser.password, 10);
     const result = await realTestPool.query(
       `INSERT INTO users (first_name, last_name, email, password_hash)
@@ -91,7 +71,6 @@ beforeAll(async () => {
     console.error('❌ Error al preparar la base de datos de prueba (beforeAll):', error);
     process.exit(1);
   } finally {
-    // Siempre cierra la conexión del pool REAL después de la preparación
     if (realTestPool) {
       await realTestPool.end();
       console.log('Conexión del realTestPool CERRADA después de beforeAll.');
@@ -99,12 +78,11 @@ beforeAll(async () => {
   }
 });
 
-// --- Before Each (antes de cada prueba individual) ---
+
 beforeEach(() => {
-  // Limpiar el historial de llamadas a las funciones mockeadas
-  // Esto asegura que cada test se ejecute en un estado de mock "limpio"
+
   const { Pool: MockedPoolConstructor } = require('pg');
-  const mockPoolInstance = MockedPoolConstructor.mock.results[0]?.value; // Obtiene la instancia del mock
+  const mockPoolInstance = MockedPoolConstructor.mock.results[0]?.value; 
 
   if (mockPoolInstance) {
     mockPoolInstance.query.mockClear();
@@ -113,20 +91,12 @@ beforeEach(() => {
   }
 });
 
-// --- After All (después de todas las pruebas) ---
+
 afterAll(async () => {
-  // En este punto, el realTestPool ya debería estar cerrado desde beforeAll.
-  // No hay un pool de app real que cerrar, ya que está mockeado.
+
   console.log('Limpieza final de mocks y confirmación de cierre de recursos de test.');
+}, 30000);
 
-  // Puedes añadir un pequeño sleep si Jest sigue quejándose de open handles,
-  // pero lo ideal es que no queden operaciones pendientes del mock.
-  // await new Promise(resolve => setTimeout(resolve, 100));
-
-}, 30000); // Aumenta el timeout si sigue dando problemas
-
-// ====================================================================
-// --- DESCRIPCIÓN DE LAS PRUEBAS ---
 
 describe('Backend API Endpoints', () => {
 
@@ -156,20 +126,17 @@ describe('Backend API Endpoints', () => {
     });
 
     it('should return 500 if city query parameter is missing', async () => {
-      // Mockea una respuesta de error para simular el fallo de la API externa sin un `city`
+     
       axios.get.mockRejectedValueOnce(new Error('City parameter missing'));
       const res = await request(app).get('/api/weather');
       expect(res.statusCode).toEqual(500);
-      // Puedes ser más específico si tu backend devuelve un mensaje de error diferente en este caso
+    
     });
   });
 
   // --- Tests para /api/register ---
   describe('POST /api/register', () => {
-    // En este beforeEach, NO necesitas limpiar la DB real.
-    // Solo limpiar los mocks si es necesario para el test específico.
     beforeEach(() => {
-        // mockPoolInstance.query.mockClear(); ya lo hace el beforeEach global.
     });
 
     it('should register a new user successfully', async () => {
@@ -184,7 +151,7 @@ describe('Backend API Endpoints', () => {
       const { Pool: MockedPoolConstructor } = require('pg');
       const mockPoolInstance = MockedPoolConstructor.mock.results[0]?.value;
       mockPoolInstance.query.mockResolvedValueOnce({
-        rows: [{ id: 2, ...newUser, password_hash: 'hashedhash' }] // Simula el RETURN de la inserción
+        rows: [{ id: 2, ...newUser, password_hash: 'hashedhash' }] 
       });
 
       const res = await request(app).post('/api/register').send(newUser);
@@ -239,41 +206,34 @@ describe('Backend API Endpoints', () => {
         password: 'existingpassword'
       };
 
-      // Mockear la consulta para simular que un usuario ya existe
       const { Pool: MockedPoolConstructor } = require('pg');
-      const mockPoolInstance = MockedPoolConstructor.mock.results[0]?.value;
-      // Primero, la consulta SELECT del login falla
+      const mockPoolInstance = MockedPoolConstructor.mock.results[0]?.value;    
       mockPoolInstance.query.mockResolvedValueOnce({ rows: [{ id: 1, email: existingUser.email, password_hash: 'some_hash' }] });
-      // Luego, la consulta INSERT falla con el código de error de duplicado
       const uniqueConstraintError = new Error('duplicate key value violates unique constraint "users_email_key"');
       uniqueConstraintError.code = '23505';
       mockPoolInstance.query.mockRejectedValueOnce(uniqueConstraintError);
 
-
-      // Simula el escenario donde el email ya está en la DB
       const res = await request(app).post('/api/register').send(existingUser);
       expect(res.statusCode).toEqual(409);
       expect(res.body.success).toBe(false);
       expect(res.body.error).toEqual('El email ya está registrado');
-      // Verificamos que se llamó una vez al pool.query (para la inserción)
+
       expect(mockPoolInstance.query).toHaveBeenCalledTimes(1);
     });
   });
 
-  // --- Tests para /api/login ---
   describe('POST /api/login', () => {
     const { Pool: MockedPoolConstructor } = require('pg');
     const mockPoolInstance = MockedPoolConstructor.mock.results[0]?.value;
 
     it('should login a valid user successfully', async () => {
-      // Mockear la respuesta de la DB para la consulta SELECT del usuario
       mockPoolInstance.query.mockResolvedValueOnce({
         rows: [{
           id: testUserId,
           first_name: testUser.firstName,
           last_name: testUser.lastName,
           email: testUser.email,
-          password_hash: hashedPassword // Usar el hash generado en beforeAll
+          password_hash: hashedPassword 
         }]
       });
 
