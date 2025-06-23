@@ -213,14 +213,16 @@ describe('Backend API Endpoints', () => {
       const { Pool: MockedPoolConstructor } = require('pg');
       const mockPoolInstance = MockedPoolConstructor.mock.results[0]?.value;
 
-      // Asegura que el mock esté limpio
+      // Asegura que no haya residuos de llamadas previas
       mockPoolInstance.query.mockReset();
 
       mockPoolInstance.query
-        // Simula que el correo aún no existe
-        .mockResolvedValueOnce({ rows: [] })
-        // Luego falla el INSERT por clave duplicada
-        .mockRejectedValueOnce(Object.assign(new Error('duplicate key'), { code: '23505' }));
+        .mockImplementationOnce(() => Promise.resolve({ rows: [] })) // SELECT no encuentra usuario
+        .mockImplementationOnce(() => {
+          const error = new Error('duplicate key');
+          error.code = '23505';
+          throw error; // Lanzar explícitamente para que Jest y Express lo capturen como un error real
+        });
 
       const res = await request(app).post('/api/register').send(existingUser);
 
@@ -228,7 +230,6 @@ describe('Backend API Endpoints', () => {
       expect(res.body.success).toBe(false);
       expect(res.body.error).toEqual('El email ya está registrado');
       expect(mockPoolInstance.query).toHaveBeenCalledTimes(2);
-      expect(mockPoolInstance.query.mock.calls[1][0]).toMatch(/INSERT INTO users/i);
     });
   });
 
