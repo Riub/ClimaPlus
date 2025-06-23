@@ -86,6 +86,7 @@ beforeEach(() => {
 
   const { Pool: MockedPoolConstructor } = require('pg');
   const mockPoolInstance = MockedPoolConstructor.mock.results[0]?.value; 
+  mockPoolInstance.query.mockReset();
 
   if (mockPoolInstance) {
     mockPoolInstance.query.mockClear();
