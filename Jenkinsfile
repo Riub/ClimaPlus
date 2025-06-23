@@ -26,7 +26,7 @@ pipeline {
             emailext (
                 subject: "🚨 Pipeline FALLIDO: ${env.JOB_NAME}",
                 body: "Detalles: ${env.BUILD_URL}console",
-                to: "tu-email@example.com"
+                to: "dracon_019@hotmail.es"
             )
         }
     }
