@@ -26,7 +26,7 @@ pipeline {
                         echo 'Instalando dependencias de backend...'
                         sh 'npm install'
                         echo 'Ejecutando pruebas de backend...'
-                        sh 'DATABASE_URL_TEST="postgres://climaplus:climaplus123@localhost:5432/climaplus" DATABASE_URL="postgres://climaplus:climaplus123@localhost:5432/climaplus" npm test'
+                        sh 'chmod +x node_modules/.bin/jest && DATABASE_URL_TEST="postgres://climaplus:climaplus123@localhost:5432/climaplus" DATABASE_URL="postgres://climaplus:climaplus123@localhost:5432/climaplus" ./node_modules/.bin/jest --detectOpenHandles'
                     }
                     dir('climaplus-frontend') {
                         echo 'Instalando dependencias de frontend...'
