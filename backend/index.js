@@ -16,7 +16,7 @@ const pool = new Pool({
 app.use(cors());
 app.use(express.json());
 
-// Endpoint del clima 
+// Endpoint del clima
 app.get('/api/weather', async (req, res) => {
   const city = req.query.city;
   const apiKey = process.env.OPENWEATHER_API_KEY;
@@ -36,9 +36,9 @@ app.post('/api/register', async (req, res) => {
 
   // 1. Validación de campos
   if (!firstName || !lastName || !email || !password) {
-    return res.status(400).json({ 
+    return res.status(400).json({
       success: false,
-      error: "Todos los campos son requeridos" 
+      error: "Todos los campos son requeridos"
     });
   }
 
@@ -65,8 +65,8 @@ app.post('/api/register', async (req, res) => {
 
     // 5. Registrar usuario en PostgreSQL
     const result = await pool.query(
-      `INSERT INTO users (first_name, last_name, email, password_hash) 
-       VALUES ($1, $2, $3, $4) 
+      `INSERT INTO users (first_name, last_name, email, password_hash)
+       VALUES ($1, $2, $3, $4)
        RETURNING id, first_name, last_name, email`,
       [firstName, lastName, email, hashedPassword]
     );
@@ -106,7 +106,7 @@ app.post('/api/login', async (req, res) => {
     const isValid = await bcrypt.compare(password, user.rows[0].password_hash);
     if (!isValid) return res.status(401).json({ error: "Credenciales inválidas" });
 
-    res.json({ 
+    res.json({
       userId: user.rows[0].id,
       firstName: user.rows[0].first_name,
       lastName: user.rows[0].last_name,
@@ -117,5 +117,12 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-// Iniciar servidor
-app.listen(3001, () => console.log('Backend running on port 3001'));
+// --- Modificación clave aquí ---
+// Iniciar servidor solo si el módulo no es requerido por otro archivo (ej. un test)
+if (require.main === module) {
+  const PORT = process.env.PORT || 3001;
+  app.listen(PORT, () => console.log(`Backend running on port ${PORT}`));
+}
+
+// Exporta la instancia de la aplicación Express
+module.exports = app;
