@@ -7,7 +7,7 @@ pipeline {
                 script {
                     echo 'Deteniendo y eliminando todos los servicios Docker anteriores (y volúmenes si es necesario para un inicio limpio de DB para tests)...'
                     // Utiliza `docker-compose down -v` aquí para asegurar una limpieza completa
-                    sh 'docker-compose down -v || true' // CAMBIO: down -v
+                    sh 'docker-compose down -v || true' 
 
                     echo 'Levantando solo la base de datos para tests...'
                     sh 'docker-compose up -d db'
