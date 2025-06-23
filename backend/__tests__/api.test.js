@@ -15,6 +15,11 @@ jest.mock('pg', () => {
 });
 
 const app = require('../index');
+
+jest.mock('axios', () => ({
+  get: jest.fn(), 
+  post: jest.fn(), 
+})); 
 const axios = require('axios'); 
 
 
@@ -205,8 +210,12 @@ describe('Backend API Endpoints', () => {
       };
 
       const { Pool: MockedPoolConstructor } = require('pg');
-      const mockPoolInstance = MockedPoolConstructor.mock.results[0]?.value;    
-      mockPoolInstance.query.mockResolvedValueOnce({ rows: [{ id: 1, email: existingUser.email, password_hash: 'some_hash' }] });
+      const mockPoolInstance = MockedPoolConstructor.mock.results[0]?.value;
+
+      // PRIMERA LLAMADA: Simular que la consulta SELECT no encuentra el usuario (para que la app intente INSERTAR)
+      mockPoolInstance.query.mockResolvedValueOnce({ rows: [] });
+
+      // SEGUNDA LLAMADA: Simular que el INSERT falla con error de unicidad (23505)
       const uniqueConstraintError = new Error('duplicate key value violates unique constraint "users_email_key"');
       uniqueConstraintError.code = '23505';
       mockPoolInstance.query.mockRejectedValueOnce(uniqueConstraintError);
@@ -216,72 +225,75 @@ describe('Backend API Endpoints', () => {
       expect(res.body.success).toBe(false);
       expect(res.body.error).toEqual('El email ya está registrado');
 
-      expect(mockPoolInstance.query).toHaveBeenCalledTimes(1);
+      // Verificamos que se llamó al pool.query dos veces (una para SELECT, otra para INSERT)
+      expect(mockPoolInstance.query).toHaveBeenCalledTimes(2);
     });
   });
 
   describe('POST /api/login', () => {
-    const { Pool: MockedPoolConstructor } = require('pg');
-    const mockPoolInstance = MockedPoolConstructor.mock.results[0]?.value;
+    const { Pool: MockedPoolConstructor } = require('pg');
+    const mockPoolInstance = MockedPoolConstructor.mock.results[0]?.value;
 
-    it('should login a valid user successfully', async () => {
-      mockPoolInstance.query.mockResolvedValueOnce({
-        rows: [{
-          id: testUserId,
-          first_name: testUser.firstName,
-          last_name: testUser.lastName,
-          email: testUser.email,
-          password_hash: hashedPassword 
-        }]
-      });
+    it('should login a valid user successfully', async () => {
+      // Mockear la respuesta de la DB para la consulta SELECT del usuario
+      mockPoolInstance.query.mockResolvedValueOnce({
+        rows: [{
+          id: testUserId, // Asegúrate de que testUserId esté disponible
+          first_name: testUser.firstName,
+          last_name: testUser.lastName,
+          email: testUser.email,
+          password_hash: hashedPassword // ¡Usar el hash generado en beforeAll!
+        }]
+      });
 
-      const res = await request(app).post('/api/login').send({
-        email: testUser.email,
-        password: testUser.password
-      });
+      const res = await request(app).post('/api/login').send({
+        email: testUser.email,
+        password: testUser.password
+      });
 
-      expect(res.statusCode).toEqual(200);
-      expect(res.body).toHaveProperty('userId', testUserId);
-      expect(res.body.email).toEqual(testUser.email);
-      expect(mockPoolInstance.query).toHaveBeenCalledTimes(1);
-      expect(mockPoolInstance.query).toHaveBeenCalledWith(
-        'SELECT * FROM users WHERE email = $1',
-        [testUser.email]
-      );
-    });
+      expect(res.statusCode).toEqual(200);
+      expect(res.body).toHaveProperty('userId', testUserId);
+      expect(res.body.email).toEqual(testUser.email);
+      expect(mockPoolInstance.query).toHaveBeenCalledTimes(1);
+      expect(mockPoolInstance.query).toHaveBeenCalledWith(
+        'SELECT * FROM users WHERE email = $1',
+        [testUser.email]
+      );
+    });
 
-    it('should return 401 for invalid credentials (wrong password)', async () => {
-      // Mockear que la consulta de usuario devuelve un usuario válido
-      mockPoolInstance.query.mockResolvedValueOnce({
-        rows: [{
-          id: testUserId,
-          first_name: testUser.firstName,
-          last_name: testUser.lastName,
-          email: testUser.email,
-          password_hash: await bcrypt.hash('different_password', 10) // Contraseña que no coincidirá
-        }]
-      });
+    it('should return 401 for invalid credentials (wrong password)', async () => {
+      // Mockear que la consulta de usuario devuelve un usuario válido,
+      // pero con una contraseña HASHEADA que NO COINCIDIRÁ con la "wrongpassword".
+      mockPoolInstance.query.mockResolvedValueOnce({
+        rows: [{
+          id: testUserId,
+          first_name: testUser.firstName,
+          last_name: testUser.lastName,
+          email: testUser.email,
+          password_hash: await bcrypt.hash('this_is_a_different_hash_from_wrongpassword', 10) // <-- Importante
+        }]
+      });
 
-      const res = await request(app).post('/api/login').send({
-        email: testUser.email,
-        password: 'wrongpassword'
-      });
-      expect(res.statusCode).toEqual(401);
-      expect(res.body).toEqual({ error: 'Credenciales inválidas' });
-      expect(mockPoolInstance.query).toHaveBeenCalledTimes(1);
-    });
+      const res = await request(app).post('/api/login').send({
+        email: testUser.email,
+        password: 'wrongpassword'
+      });
+      expect(res.statusCode).toEqual(401);
+      expect(res.body).toEqual({ error: 'Credenciales inválidas' });
+      expect(mockPoolInstance.query).toHaveBeenCalledTimes(1);
+    });
 
-    it('should return 401 for invalid credentials (non-existent email)', async () => {
-      // Mockear que la consulta de usuario no devuelve ninguna fila
-      mockPoolInstance.query.mockResolvedValueOnce({ rows: [] });
+    it('should return 401 for invalid credentials (non-existent email)', async () => {
+      // Mockear que la consulta de usuario no devuelve ninguna fila
+      mockPoolInstance.query.mockResolvedValueOnce({ rows: [] });
 
-      const res = await request(app).post('/api/login').send({
-        email: 'nonexistent@example.com',
-        password: 'anypassword'
-      });
-      expect(res.statusCode).toEqual(401);
-      expect(res.body).toEqual({ error: 'Credenciales inválidas' });
-      expect(mockPoolInstance.query).toHaveBeenCalledTimes(1);
-    });
-  });
+      const res = await request(app).post('/api/login').send({
+        email: 'nonexistent@example.com',
+        password: 'anypassword'
+      });
+      expect(res.statusCode).toEqual(401);
+      expect(res.body).toEqual({ error: 'Credenciales inválidas' });
+      expect(mockPoolInstance.query).toHaveBeenCalledTimes(1);
+    });
+  });
 });
