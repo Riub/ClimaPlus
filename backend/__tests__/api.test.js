@@ -70,20 +70,18 @@ beforeAll(async () => {
 
 // --- Después de todas las pruebas ---
 afterAll(async () => {
-  // Limpiar tablas nuevamente o simplemente cerrar la conexión
   try {
-    // Asegúrate de que el pool esté definido y conectado antes de intentar cerrarlo
     if (pool) {
-      await pool.query('DROP TABLE IF EXISTS favorites;'); // Limpieza de tablas
-      await pool.query('DROP TABLE IF EXISTS users CASCADE;'); // Limpieza de tablas
-      await pool.end(); // ¡Cerrar la conexión al pool de DB!
+      await pool.query('DROP TABLE IF EXISTS favorites;');
+      await pool.query('DROP TABLE IF EXISTS users CASCADE;');
+      await pool.end();
       console.log('Conexión a la base de datos de prueba cerrada y tablas eliminadas.');
     }
   } catch (error) {
     console.error('Error al limpiar la base de datos de prueba en afterAll:', error);
-    // No uses process.exit(1) aquí, ya que podría abortar el pipeline cuando los tests pasaron
   }
-});
+}, 30000); // 30 segundos
+
 
 // --- Descripción de las pruebas ---
 describe('Backend API Endpoints', () => {
