@@ -4,17 +4,38 @@ pipeline {
     stages {
         stage('Build & Test Frontend/Backend') {
             steps {
-                dir('backend') {
-                    echo 'Instalando dependencias de backend...'
-                    sh 'npm install'
-                    echo 'Ejecutando pruebas de backend...'
-                    sh 'npm test'
-                }
-                dir('climaplus-frontend') {
-                    echo 'Instalando dependencias de frontend...'
-                    sh 'npm install'
-                    echo 'Ejecutando pruebas de frontend...'
-                    sh 'npm test'
+                script {
+                    echo 'Deteniendo servicios Docker previos para la fase de test (si existen)...'
+    
+                    sh 'docker-compose down db || true' // Solo baja el servicio 'db'
+
+                    echo 'Levantando solo la base de datos para tests...'
+                    sh 'docker-compose up -d db' // Levanta solo el servicio 'db'
+
+                    echo 'Esperando a que la base de datos esté lista para tests...'
+
+                    sh '''
+                        docker-compose exec -T db sh -c "
+                            until pg_isready -h localhost -p 5432 -U climaplus -d climaplus; do
+                                echo 'Esperando por db para tests...'
+                                sleep 2
+                            done
+                        "
+                    '''
+
+
+                    dir('backend') {
+                        echo 'Instalando dependencias de backend...'
+                        sh 'npm install'
+                        echo 'Ejecutando pruebas de backend...'
+                        sh 'npm test'
+                    }
+                    dir('climaplus-frontend') {
+                        echo 'Instalando dependencias de frontend...'
+                        sh 'npm install'
+                        echo 'Ejecutando pruebas de frontend...'
+                        sh 'npm test'
+                    }
                 }
             }
         }
