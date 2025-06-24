@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
-import './WeatherDashboard.css';
+import NavBar from './NavBar';
+import SearchBar from './SearchBar';
+import WeatherCard from './WeatherCard';
+import ErrorMessage from './ErrorMessage';
+import '../styles/WeatherDashboard.css';
 
-const WeatherDashboard = ({ user }) => {
+const WeatherDashboard = ({ user, onLogout, favorites, setFavorites, setView }) => {
   const [city, setCity] = useState('');
   const [weatherData, setWeatherData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [favoriteSaved, setFavoriteSaved] = useState(false);
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -14,15 +17,13 @@ const WeatherDashboard = ({ user }) => {
 
     setLoading(true);
     setError('');
-    setFavoriteSaved(false);
 
     try {
-      const response = await fetch(
-        `http://localhost:3001/api/weather?city=${encodeURIComponent(city)}`
-      );
+      const response = await fetch(`http://localhost:3001/api/weather?city=${encodeURIComponent(city)}`);
       const data = await response.json();
 
       if (!response.ok) throw new Error(data.error || 'Ciudad no encontrada');
+
       setWeatherData(data);
     } catch (err) {
       setError(err.message);
@@ -32,88 +33,46 @@ const WeatherDashboard = ({ user }) => {
     }
   };
 
-  const saveToFavorites = async () => {
-    if (!weatherData || !user) return;
-
-    try {
-      const response = await fetch('http://localhost:3001/api/favorites', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}` // Si usas JWT
-        },
-        body: JSON.stringify({ 
-          userId: user.id, 
-          city: weatherData.name 
-        }),
-      });
-
-      if (response.ok) {
-        setFavoriteSaved(true);
-        setTimeout(() => setFavoriteSaved(false), 3000); // Mensaje desaparece después de 3s
+  const handleAddFavorite = async () => {
+    if (weatherData && !favorites.includes(weatherData.name)) {
+      try {
+        await fetch('http://localhost:3001/api/favorites', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: user.userId, city: weatherData.name })
+        });
+        setFavorites([...favorites, weatherData.name]);
+      } catch (err) {
+        console.error('Error al guardar favorito:', err);
       }
-    } catch (error) {
-      console.error('Error al guardar favorito:', error);
     }
   };
 
   return (
-    <div className="dashboard">
-      {/* Barra de búsqueda */}
-      <div className="weather-search-container">
-        <form onSubmit={handleSearch} className="search-form">
-          <input
-            type="text"
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
-            placeholder="Buscar ciudad..."
-            className="search-input"
-            disabled={loading}
-          />
-          <button 
-            type="submit" 
-            className="search-button"
-            disabled={loading || !city.trim()}
-          >
-            {loading ? 'Buscando...' : 'Buscar'}
-          </button>
-        </form>
-
-        {error && <div className="error-message">{error}</div>}
-      </div>
-
-      {/* Tarjeta del clima + botón favorito */}
-      {weatherData && (
-        <div className="weather-card">
-          <div className="weather-header">
-            <h2>{weatherData.name}, {weatherData.sys?.country}</h2>
-            <button 
-              onClick={saveToFavorites}
-              className={`favorite-button ${favoriteSaved ? 'saved' : ''}`}
-              disabled={favoriteSaved}
-            >
-              {favoriteSaved ? '✓ Guardado' : '★ Guardar en Favoritos'}
-            </button>
-          </div>
-
-          <div className="weather-main">
-            <img 
-              src={`https://openweathermap.org/img/wn/${weatherData.weather[0].icon}@2x.png`} 
-              alt={weatherData.weather[0].description}
-            />
-            <span className="temperature">
-              {Math.round(weatherData.main.temp)}°C
-            </span>
-          </div>
-
-          <div className="weather-details">
-            <p>{weatherData.weather[0].description}</p>
-            <p>Humedad: {weatherData.main.humidity}%</p>
-            <p>Viento: {Math.round(weatherData.wind.speed * 3.6)} km/h</p>
-          </div>
+    <>
+      <NavBar user={user} onLogout={onLogout} favoritesCount={favorites.length} setView={setView} />
+      <div className="dashboard">
+        <div className="dashboard-header">
+          <h1>Bienvenido, {user.firstName}</h1>
+          <p className="email">{user.email}</p>
         </div>
-      )}
-    </div>
+
+        <div className="weather-search-container">
+          <SearchBar city={city} setCity={setCity} onSearch={handleSearch} loading={loading} />
+          {error && <ErrorMessage message={error} />}
+        </div>
+
+        <div className="dashboard-main">
+          {weatherData && (
+            <WeatherCard
+              weatherData={weatherData}
+              onAddFavorite={handleAddFavorite}
+              isFavorite={favorites.includes(weatherData.name)}
+            />
+          )}
+        </div>
+      </div>
+    </>
   );
 };
 

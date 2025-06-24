@@ -1,36 +1,42 @@
 // src/App.js
 import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Navbar from './components/Navbar';
 import Login from './components/Login';
 import WeatherDashboard from './components/WeatherDashboard';
-import Favorites from './components/Favorites';
+import FavoritesView from './components/FavoritesView'; // Asegúrate de crearlo o importarlo
 import './App.css';
 
 function App() {
   const [user, setUser] = useState(null);
+  const [view, setView] = useState('dashboard');
+  const [favorites, setFavorites] = useState([]);
 
   const handleLogout = () => {
     setUser(null);
-    localStorage.removeItem('token');
+    setView('dashboard');
+    setFavorites([]);
   };
 
   return (
-    <Router>
-      <div className="App">
-        {user && <Navbar user={user} onLogout={handleLogout} />}
-        <Routes>
-          <Route 
-            path="/" 
-            element={user ? <WeatherDashboard user={user} /> : <Login onLogin={setUser} />} 
-          />
-          <Route 
-            path="/favorites" 
-            element={user ? <Favorites userId={user.id} /> : <Login onLogin={setUser} />} 
-          />
-        </Routes>
-      </div>
-    </Router>
+    <div className="App">
+      {!user ? (
+        <Login onLogin={setUser} />
+      ) : view === 'dashboard' ? (
+        <WeatherDashboard 
+          user={user}
+          onLogout={handleLogout}
+          setView={setView}
+          favorites={favorites}
+          setFavorites={setFavorites}
+        />
+      ) : (
+        <FavoritesView 
+          user={user}
+          onLogout={handleLogout}
+          setView={setView}
+          favorites={favorites}
+        />
+      )}
+    </div>
   );
 }
 
