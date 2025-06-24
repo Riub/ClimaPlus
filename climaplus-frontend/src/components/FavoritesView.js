@@ -1,15 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import NavBar from './Navbar';
+import NavBar from './Navbar'; // asegúrate que el archivo se llame así exactamente
 
 const FavoritesView = ({ user, onLogout, setView }) => {
   const [favorites, setFavorites] = useState([]);
   const [weatherData, setWeatherData] = useState([]);
+  const API_URL = process.env.REACT_APP_API_URL;
 
   // Obtener favoritos desde tu API
   useEffect(() => {
     const fetchFavorites = async () => {
       try {
-        const res = await fetch(`http://https://1a7d-190-26-142-76.ngrok-free.app/:3001/api/favorites?userId=${user.userId}`);
+        const res = await fetch(`${API_URL}/api/favorites?userId=${user.userId}`);
         const data = await res.json();
         if (Array.isArray(data)) setFavorites(data);
       } catch (err) {
@@ -18,7 +19,7 @@ const FavoritesView = ({ user, onLogout, setView }) => {
     };
 
     fetchFavorites();
-  }, [user.userId]);
+  }, [user.userId, API_URL]);
 
   // Obtener clima de favoritos
   useEffect(() => {
@@ -26,7 +27,7 @@ const FavoritesView = ({ user, onLogout, setView }) => {
       const data = await Promise.all(
         favorites.map(async (city) => {
           try {
-            const res = await fetch(`http://https://1a7d-190-26-142-76.ngrok-free.app/:3001/api/weather?city=${encodeURIComponent(city)}`);
+            const res = await fetch(`${API_URL}/api/weather?city=${encodeURIComponent(city)}`);
             const json = await res.json();
             return res.ok ? json : null;
           } catch {
@@ -39,12 +40,12 @@ const FavoritesView = ({ user, onLogout, setView }) => {
 
     if (favorites.length > 0) fetchWeather();
     else setWeatherData([]);
-  }, [favorites]);
+  }, [favorites, API_URL]);
 
   // Eliminar favorito
   const handleRemove = async (city) => {
     try {
-      const res = await fetch('http://https://1a7d-190-26-142-76.ngrok-free.app/:3001/api/favorites', {
+      const res = await fetch(`${API_URL}/api/favorites`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.userId, city })
@@ -67,7 +68,7 @@ const FavoritesView = ({ user, onLogout, setView }) => {
       ) : (
         <div className="favorites-grid">
           {weatherData.map((weather) => (
-            <div className="weather-card" key={weather.id}>
+            <div className="weather-card fade-in" key={weather.id}>
               <h3>{weather.name}, {weather.sys.country}</h3>
               <img 
                 src={`https://openweathermap.org/img/wn/${weather.weather[0].icon}@2x.png`} 
