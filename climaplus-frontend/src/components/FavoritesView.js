@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import NavBar from './NavBar';
+import NavBar from './Navbar';
 
 const FavoritesView = ({ user, onLogout, setView }) => {
   const [favorites, setFavorites] = useState([]);
