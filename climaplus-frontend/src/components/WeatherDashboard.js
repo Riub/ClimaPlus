@@ -12,7 +12,7 @@ const WeatherDashboard = ({ user, onLogout, favorites, setFavorites, setView }) 
   const [weatherData, setWeatherData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const API_URL = process.env.REACT_APP_API_URL;
+ 
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -22,7 +22,7 @@ const WeatherDashboard = ({ user, onLogout, favorites, setFavorites, setView }) 
     setError('');
 
     try {
-      const response = await fetch(`${API_URL}/api/weather?city=${encodeURIComponent(city)}`);
+      const response = await fetch(`http://localhost:3001/api/weather?city=${encodeURIComponent(city)}`);
       const data = await response.json();
 
       if (!response.ok) throw new Error(data.error || 'Ciudad no encontrada');
@@ -39,7 +39,7 @@ const WeatherDashboard = ({ user, onLogout, favorites, setFavorites, setView }) 
   const handleAddFavorite = async () => {
     if (weatherData && !favorites.includes(weatherData.name)) {
       try {
-        await fetch(`${API_URL}/api/favorites`, {
+        await fetch('http://localhost:3001/api/favorites', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ userId: user.userId, city: weatherData.name })
