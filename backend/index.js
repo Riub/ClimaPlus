@@ -7,6 +7,7 @@ require('dotenv').config();
 
 const app = express();
 
+app.use(cors());
 // Configuración de PostgreSQL
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL
