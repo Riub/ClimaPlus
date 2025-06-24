@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import NavBar from './NavBar';
+import NavBar from './Navbar';
 import SearchBar from './SearchBar';
 import WeatherCard from './WeatherCard';
 import ErrorMessage from './ErrorMessage';
