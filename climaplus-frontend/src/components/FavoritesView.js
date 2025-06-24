@@ -9,7 +9,7 @@ const FavoritesView = ({ user, onLogout, setView }) => {
   useEffect(() => {
     const fetchFavorites = async () => {
       try {
-        const res = await fetch(`http://localhost:3001/api/favorites?userId=${user.userId}`);
+        const res = await fetch(`http://https://1a7d-190-26-142-76.ngrok-free.app/:3001/api/favorites?userId=${user.userId}`);
         const data = await res.json();
         if (Array.isArray(data)) setFavorites(data);
       } catch (err) {
@@ -26,7 +26,7 @@ const FavoritesView = ({ user, onLogout, setView }) => {
       const data = await Promise.all(
         favorites.map(async (city) => {
           try {
-            const res = await fetch(`http://localhost:3001/api/weather?city=${encodeURIComponent(city)}`);
+            const res = await fetch(`http://https://1a7d-190-26-142-76.ngrok-free.app/:3001/api/weather?city=${encodeURIComponent(city)}`);
             const json = await res.json();
             return res.ok ? json : null;
           } catch {
@@ -44,7 +44,7 @@ const FavoritesView = ({ user, onLogout, setView }) => {
   // Eliminar favorito
   const handleRemove = async (city) => {
     try {
-      const res = await fetch('http://localhost:3001/api/favorites', {
+      const res = await fetch('http://https://1a7d-190-26-142-76.ngrok-free.app/:3001/api/favorites', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.userId, city })
